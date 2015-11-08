@@ -1,0 +1,8 @@
+#ignore private key files
+*.key
+*.pem
+*.crt
+*.cert
+
+#exclude test files
+*.txt
