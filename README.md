@@ -9,13 +9,13 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
 - Be able to run this either as a standalone script or as an AWS Lambda function
 - Tertiary goal, but making it run both in Python 2 and 3.  Testing in 2.7.6 and 3.4.3
 
-#Usage:
+#CLI Usage:
 ##General:
     usage: keypot.py [-h] [-v] {encrypt,decrypt,list,delete} ...
-    
+
     Keypot - Encrypts, Decrypts, and Manages Secrets stored in AWS DynamoDB with
     KMS key
-    
+
     positional arguments:
       {encrypt,decrypt,list,delete}
                             For more information and usage information, get help
@@ -26,7 +26,7 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
                             NOT YET IMPLEMENTED
         delete              Keypot Delete - Removes a key from DynamoDB - NOT YET
                             IMPLEMENTED
-    
+
     optional arguments:
       -h, --help            show this help message and exit
       -v, --version         show program's version number and exit
@@ -34,7 +34,7 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
 ##Encrypt:
     usage: keypot.py encrypt [-h] [-f PARAMETER_FILE] -k KMS_KEY -p PARAMETER_KEY
                              [-r REGION] -t DDB_TABLE [-o] [-v PARAMETER_VALUE]
-    
+
     optional arguments:
       -h, --help            show this help message and exit
       -f PARAMETER_FILE, --parameter_file PARAMETER_FILE
@@ -58,7 +58,7 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
 ##Decrypt:
     usage: keypot.py decrypt [-h] -k KMS_KEY -p PARAMETER_KEY [-r REGION] -t
                              DDB_TABLE
-    
+
     optional arguments:
       -h, --help            show this help message and exit
       -k KMS_KEY, --kms_key KMS_KEY
@@ -71,9 +71,8 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
       -t DDB_TABLE, --ddb_table DDB_TABLE
                             Name of existing DynamoDB Table to use in look-up
 
-##List:
-    usage: keypot.py list [-h] [-r REGION] -t DDB_TABLE
-    
+     usage: keypot.py list [-h] [-r REGION] -t DDB_TABLE
+
     optional arguments:
       -h, --help            show this help message and exit
       -r REGION, --region REGION
@@ -83,7 +82,7 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
 
 ##Delete:
     usage: keypot.py delete [-h] -p PARAMETER_KEY [-r REGION] -t DDB_TABLE
-    
+
     optional arguments:
       -h, --help            show this help message and exit
       -p PARAMETER_KEY, --parameter_key PARAMETER_KEY
@@ -93,5 +92,46 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
       -t DDB_TABLE, --ddb_table DDB_TABLE
                             Name of existing DynamoDB Table to use in look-up
 
+#Lambda Setup:
+##Install Package Dependencies
+    sudo pip install --target ~/keypot/ -r ~/keypot/requirements.txt
+
+##Zip Package Contents
+Make sure you run this from inside the directory where you've checked out code.  This command is meant to be run from the root of this project.  Excludes common test artifacts like .key and .txt extensions.
+
+```shell
+zip -r keypot.zip * -x *.git* *.key *.txt
+```
+
+##Sample Lambda Calls
+###List
+```shell
+aws lambda invoke --function-name keypot \
+--payload '{"action": "list","options": {"ddb_table": "test-creds"}}' \
+--invocation-type RequestResponse \
+ results.txt
+
+#Remove the Lambda garbage (" and \n chars)
+cat ~/Desktop/results.txt | tr -d "\"" | sed  's/\\n/\n/g'my_var2
+
+```
+```json
+{
+  "action": "list",
+  "options": {
+    "ddb_table": "test-creds"
+  }
+}
+```
+
+#IAM Role Configuration
+Coming soon.  Pretty much just:
+DDB:
+Read/Write/List operations to any tables you want (or * if you're into that)
+KMS:
+encrypt/decrypt/generatedatakey
+
 # Future Enhancements:
 - Add support to upload a file from S3 for encryption (useful for Lambda?)
+- Add versioning of keys (using a range key?)
+- Add random password generation for input operation

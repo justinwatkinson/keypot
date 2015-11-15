@@ -5,9 +5,10 @@ from Crypto import Random
 from Crypto.Cipher import AES
 import argparse
 import base64
+from argparse import Namespace
 
 #VERSION
-keyper_version='Keypot-0.1'
+keypot_version='Keypot-0.2'
 ddb_hash_key_name='env-variable-name'
 
 #Pads the data to suit the AES-256 encryption requirements
@@ -39,6 +40,20 @@ def local_decrypt(ciphertext, key):
     cipher = AES.new(key, AES.MODE_ECB, iv)
     plaintext = cipher.decrypt(ciphertext[AES.block_size:])
     return unpad(plaintext.decode('ASCII'))
+
+def create_ddb_client(args):
+    global ddb
+    
+    if 'region' in args:
+        if args['region'] != '':
+            ddb = boto3.client('dynamodb', region_name=args['region'])
+            return
+    
+    ddb = boto3.client('dynamodb')
+    return
+    
+def create_kms_client(region):
+    global kms
 
 def encrypt_and_store():
     #Generate a key using KMS service
@@ -203,8 +218,9 @@ def do_list(list_args):
     global ddb_table_name
     global parameter_key
     
-    ddb = boto3.client('dynamodb', region_name=list_args.region)
-    ddb_table_name=list_args.ddb_table
+    create_ddb_client(list_args)
+    
+    ddb_table_name=list_args['ddb_table']
     
     #get list of "String" key attributes from DynamoDB
     variable_list = list_from_ddb()
@@ -212,14 +228,14 @@ def do_list(list_args):
         for var in variable_list:
             print(var[ddb_hash_key_name]['S'])
         
-    return
+    return variable_list
 
 #default entry point - possible future enhancement would be to turn this into a lambda function
-def keyper_cli():
+def keypot_cli():
     parser = {}
     action='super'
     parser[action] = argparse.ArgumentParser(description='Keypot - Encrypts, Decrypts, and Manages Secrets stored in AWS DynamoDB with KMS key')
-    parser[action].add_argument('-v','--version', action='version', version=(keyper_version))
+    parser[action].add_argument('-v','--version', action='version', version=(keypot_version))
     subparser = parser['super'].add_subparsers(help='For more information and usage information, get help by using the {name} -h syntax')
     
     #encrypt
@@ -268,12 +284,89 @@ def keyper_cli():
         if super_args.action == 'decrypt':
             do_decrypt(decrypt_args=super_args)
         if super_args.action == 'list':
-            do_list(list_args=super_args)
+            do_list(list_args=vars(super_args))
         if super_args.action == 'delete':
-            do_delete(delete_args=super_args)
+            do_delete(delrete_args=super_args)
     
     return
 
+#entry point for the lambda function
+def keypot_lambda_handler(event, context): 
+    if event['action'] == 'list':
+        variable_list=do_list(event['options'])
+        output_string=''
+        if variable_list:
+            for var in variable_list:
+                output_string+=var[ddb_hash_key_name]['S']
+                output_string+='\n'
+        return output_string
+    
+    # parser = {}
+    # action='super'
+    # parser[action] = argparse.ArgumentParser(description='Keypot - Encrypts, Decrypts, and Manages Secrets stored in AWS DynamoDB with KMS key')
+    # parser[action].add_argument('-v','--version', action='version', version=(keypot_version))
+    # subparser = parser['super'].add_subparsers(help='For more information and usage information, get help by using the {name} -h syntax')
+    # 
+    # #encrypt
+    # action='encrypt'
+    # parser[action] = subparser.add_parser(action, help='Keypot Encrypt - Encrypts value in DynamoDB using KMS')
+    # #does not support both value and an input file, so using a mutually exclusive group
+    # encrypt_mutual_exclusive = parser[action].add_mutually_exclusive_group()
+    # encrypt_mutual_exclusive.add_argument('-f','--parameter_file', help='Location of file you want to upload (e.g. SSL private key).  One of this or parameter_value required.',required=False)
+    # parser[action].add_argument('-k','--kms_key', help='Name of AWS KMS Customer Master Key (ex: alias/test-key)',required=True)
+    # parser[action].add_argument('-p','--parameter_key', help='Name of Parameter to put into DynamoDB',required=True)
+    # parser[action].add_argument('-r','--region', help='Name of AWS Region to use for both KMS and DynamoDB',required=False)
+    # parser[action].add_argument('-t','--ddb_table', help='Name of existing DynamoDB Table to use in look-up',required=True)
+    # parser[action].add_argument('-o','--overwrite', action='store_true', help='Force overwrite of existing value in DynamoDB without prompting for overwrite',required=False,default=False)
+    # encrypt_mutual_exclusive.add_argument('-v','--parameter_value', help='Value of Parameter to put into DynamoDB.    One of this or parameter_file required.',required=False)
+    # parser[action].set_defaults(action=action)
+    # 
+    # #decrypt
+    # action='decrypt'
+    # parser[action] = subparser.add_parser(action, help='Keypot Decrypt - Decrypt value in DynamoDB using KMS')
+    # parser[action].add_argument('-k','--kms_key', help='Name of AWS KMS Customer Master Key (ex: alias/test-key)',required=True)
+    # parser[action].add_argument('-p','--parameter_key', help='Name of Parameter to put into DynamoDB',required=True)
+    # parser[action].add_argument('-r','--region', help='Name of AWS Region to use for both KMS and DynamoDB',required=False)
+    # parser[action].add_argument('-t','--ddb_table', help='Name of existing DynamoDB Table to use in look-up',required=True)
+    # parser[action].set_defaults(action=action)
+    # 
+    # #list
+    # action='list'
+    # parser[action] = subparser.add_parser(action, help='Keypot List - List all keys available in DynamoDB - NOT YET IMPLEMENTED')
+    # parser[action].add_argument('-r','--region', help='Name of AWS Region to use for both KMS and DynamoDB',required=False)
+    # parser[action].add_argument('-t','--ddb_table', help='Name of existing DynamoDB Table to use in look-up',required=True)
+    # parser[action].set_defaults(action=action)
+    # 
+    # #delete
+    # action='delete'
+    # parser[action] = subparser.add_parser(action, help='Keypot Delete - Removes a key from DynamoDB - NOT YET IMPLEMENTED')
+    # parser[action].add_argument('-p','--parameter_key', help='Name of Parameter to put into DynamoDB',required=True)
+    # parser[action].add_argument('-r','--region', help='Name of AWS Region to use for both KMS and DynamoDB',required=False)
+    # parser[action].add_argument('-t','--ddb_table', help='Name of existing DynamoDB Table to use in look-up',required=True)
+    # parser[action].set_defaults(action=action)
+    # 
+    # #based on sub-argument, send to correct function
+    # super_args = parser['super'].parse_args()
+    # if "action" in vars(super_args):
+    #     if super_args.action == 'encrypt':
+    #         do_encrypt(encrypt_args=super_args)
+    #     if super_args.action == 'decrypt':
+    #         do_decrypt(decrypt_args=super_args)
+    #     if super_args.action == 'list':
+    #         do_list(list_args=super_args)
+    #     if super_args.action == 'delete':
+    #         do_delete(delete_args=super_args)
+    # 
+    # return
+    
 #primary method when executed directly
 if __name__ == '__main__':
-    keyper_cli()
+    # event = {"action":"list","options": {"option1": "value1"}}
+    # 
+    # if event['action'] == 'list':
+    #     namespace=Namespace(a=1, b=2, c=3)
+    #     o=Keypot(event['options'])
+    #     print(o.option1)
+    #     
+    #     do_list(Namespace(event['options']))
+    keypot_cli()
