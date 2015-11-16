@@ -200,10 +200,8 @@ cat ~/delete.txt | tr -d "\"" | sed  's/\\n/\n/g'
 
 #IAM Role Configuration
 Coming soon.  Pretty much just:
-DDB:
-Read/Write/List operations to any tables you want (or * if you're into that)
-KMS:
-encrypt/decrypt/generatedatakey
+- DDB:  Read/Write/List operations to any tables you want (or * if you're into that)
+- KMS:  encrypt/decrypt/generatedatakey
 
 # Future Enhancements:
 - Add support to upload a file from S3 for encryption (useful for Lambda!)
