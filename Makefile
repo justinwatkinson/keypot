@@ -1,5 +1,5 @@
-LAMBDA_BUCKET_NAME=
-LAMBDA_KEYPOT_KEY=
+LAMBDA_BUCKET_NAME=""
+LAMBDA_KEYPOT_KEY=""
 
 .PHONY: build push test zip release
 
