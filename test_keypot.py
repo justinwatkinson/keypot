@@ -72,9 +72,15 @@ class KeypotTestCase(unittest.TestCase):
         keypot_instance=Keypot(args)
         with self.assertRaises(KeypotError) as ke:
             keypot_instance.do_encrypt()
+            
+    def test_encrypt_value_override_false_override_failure(self):
+        args={"ddb_table":test_ddb_table,"parameter_key":test_ddb_name_text_var,"parameter_value":test_ddb_name_text_val1, "overwrite": "FALSE", "kms_key": test_kms_key}
+        keypot_instance=Keypot(args)
+        with self.assertRaises(KeypotError) as ke:
+            keypot_instance.do_encrypt()
     
     def test_encrypt_value_with_overwrite(self):
-        args={"ddb_table":test_ddb_table,"parameter_key":test_ddb_name_text_var,"parameter_value":test_ddb_name_text_val2, "overwrite": True, "kms_key": test_kms_key}
+        args={"ddb_table":test_ddb_table,"parameter_key":test_ddb_name_text_var,"parameter_value":test_ddb_name_text_val2, "overwrite": "TRUE", "kms_key": test_kms_key}
         keypot_instance=Keypot(args)
         self.assertIsInstance(keypot_instance.do_encrypt(),str)
         
@@ -149,6 +155,9 @@ if __name__ == '__main__':
     
     #Repeat entry, but this time it should fail because it already exists
     KeypotTestSuite.addTest(KeypotTestCase('test_encrypt_value_no_override_override_failure'))
+    
+    #Repeat entry again, but this time using Override=false flag
+    KeypotTestSuite.addTest(KeypotTestCase('test_encrypt_value_override_false_override_failure'))
     
     #Decrypt/Read entry for correct value
     KeypotTestSuite.addTest(KeypotTestCase('test_read_text_value1'))

@@ -59,6 +59,18 @@ class KeypotLambdaTestCase(unittest.TestCase):
         check_value=result['Payload'].read() #Not sure why, but the assert doesn't like the result['Payload].read() expression, returns none when used in that context, even though it's a string
         #see if it returned the error from keypot
         self.assertRegexpMatches(check_value,str('.*'+ keypot.string_key_already_exists + '.*'))
+        
+    def test_encrypt_value_override_false_override_failure(self):
+        payload=b'{"action":"encrypt","options":{"ddb_table":"' + test_ddb_table + '","parameter_key":"' + test_ddb_name_text_var + '","parameter_value":"' + test_ddb_name_text_val1 + '","overwrite":"false","kms_key":"' + test_kms_key+'"}}'
+        lambda_client=boto3.client('lambda')
+        result=lambda_client.invoke(
+            FunctionName='keypot',
+            InvocationType='RequestResponse',
+            Payload=payload,
+        )
+        check_value=result['Payload'].read() #Not sure why, but the assert doesn't like the result['Payload].read() expression, returns none when used in that context, even though it's a string
+        #see if it returned the error from keypot
+        self.assertRegexpMatches(check_value,str('.*'+ keypot.string_key_already_exists + '.*'))
     
     def test_encrypt_value_with_overwrite(self):
         payload=b'{"action":"encrypt","options":{"ddb_table":"' + test_ddb_table + '","parameter_key":"' + test_ddb_name_text_var + '","parameter_value":"' + test_ddb_name_text_val2 + '","overwrite":"true","kms_key":"' + test_kms_key+'"}}'
@@ -144,6 +156,9 @@ if __name__ == '__main__':
     
     #Re-read entry to ensure it took new value
     KeypotTestSuite.addTest(KeypotLambdaTestCase('test_read_text_value2'))
+    
+    #Repeat entry again, but this time using Override=false flag
+    KeypotTestSuite.addTest(KeypotLambdaTestCase('test_encrypt_value_override_false_override_failure'))
     
     #List all objects (should have at least 1)
     KeypotTestSuite.addTest(KeypotLambdaTestCase('test_list_function'))

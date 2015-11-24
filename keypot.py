@@ -58,7 +58,10 @@ class Keypot():
                     
             if ('overwrite' in args):
                 if (args['overwrite']):
-                    self.overwrite_flag=True
+                    if (str(args['overwrite']).lower() == 'true'):
+                        self.overwrite_flag=True
+                    else:
+                        self.overwrite_flag=False
                     
             if ('region' in args):
                 if (args['region']):
