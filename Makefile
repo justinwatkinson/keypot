@@ -14,9 +14,6 @@ push:
 	aws lambda update-function-code --function-name keypot --s3-bucket $(LAMBDA_BUCKET_NAME) --s3-key $(LAMBDA_KEYPOT_KEY)
 	
 test:
-	echo 'Not yet implemented'
+	python test_keypot.py
 	
-release:
-	make build
-	make zip
-	make push
+release: build test zip push

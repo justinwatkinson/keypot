@@ -1,6 +1,7 @@
 Keypot (key-depot, or a play on words where you keep a key under a pot) is a simple python routine that will allow you to use the Amazon KMS service in conjunction with AWS DynamoDB to store and retrieve variables in encrypted form in a database that is easy to query and never has to store a key on disk or inside a container.
 
 # Prerequisites:
+- TEMPORARY:  You must create the initial version of the Lambda function manually.  Coming soon will be a CloudFormation template to create the initial Lambda function as well as the IAM role it requires, and a separate DynamoDB table as well.
 - Set up your Amazon environnment to already be ready for AWS API calls (e.g. add .aws directory or execute aws configure from CLI)
 - Set up an AWS Dynamo DB table with a hash key:  env-variable-name (type is String)
 - Ensure your account or instance has the proper IAM roles (full definition coming soon!)
