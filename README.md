@@ -7,13 +7,14 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
 - Ensure your account or instance has the proper IAM roles (full definition coming soon!)
 - Make - makes building/deploying/testing a ton easier
 - Pip - my Ubuntu repo had an ancient version.  Try sudo pip install -U pip.  Tested with version 7.1.2 of pip.  The older versions struggled with the --target option.
+- Python-dev package - For Ubuntu, make sure you install the python-dev package (or other appropriate for your distribution).  This is needed to be able to use Pycrypto.
 
-#Design Goals:
+# Design Goals:
 - Be able to run this either as a standalone script or as an AWS Lambda function
 - Lower priority:  Making it run both in Python 2 and 3.  Testing in 2.7.6 and 3.4.3.  Primary is 2.7 due to Lambda limitation, but hoping to support 3.x through CLI.
 
-#CLI Usage:
-##General:
+# CLI Usage:
+## General:
     usage: keypot.py [-h] [-v] {encrypt,decrypt,list,delete} ...
 
     Keypot - Encrypts, Decrypts, and Manages Secrets stored in AWS DynamoDB with
@@ -34,7 +35,7 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
       -h, --help            show this help message and exit
       -v, --version         show program's version number and exit
 
-##Encrypt:
+## Encrypt:
     usage: keypot.py encrypt [-h] [-f PARAMETER_FILE] -k KMS_KEY -p PARAMETER_KEY
                              [-r REGION] -t DDB_TABLE [-o] [-v PARAMETER_VALUE]
 
@@ -58,7 +59,7 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
                             Value of Parameter to put into DynamoDB. One of this
                             or parameter_file required.
 
-##Decrypt:
+## Decrypt:
     usage: keypot.py decrypt [-h] -k KMS_KEY -p PARAMETER_KEY [-r REGION] -t
                              DDB_TABLE
 
@@ -83,7 +84,7 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
       -t DDB_TABLE, --ddb_table DDB_TABLE
                             Name of existing DynamoDB Table to use in look-up
 
-##Delete:
+## Delete:
     usage: keypot.py delete [-h] -p PARAMETER_KEY [-r REGION] -t DDB_TABLE
 
     optional arguments:
@@ -95,15 +96,15 @@ Keypot (key-depot, or a play on words where you keep a key under a pot) is a sim
       -t DDB_TABLE, --ddb_table DDB_TABLE
                             Name of existing DynamoDB Table to use in look-up
 
-#Lambda Setup:
-##Install Package Dependencies
+# Lambda Setup:
+## Install Package Dependencies
     sudo pip install --upgrade --force-reinstall --target . -r requirements.txt
 
     or
 
     make build
 
-##Zip Package Contents
+## Zip Package Contents
 Make sure you run this from inside the directory where you've checked out code.  This command is meant to be run from the root of this project.  Excludes common test artifacts like .key and .txt extensions.
 
 ```shell
@@ -114,15 +115,15 @@ or
 make zip
 ```
 
-##Sample Lambda Calls
-###Encrypt
+## Sample Lambda Calls
+### Encrypt
 ```shell
 aws lambda invoke --function-name keypot \
 --payload '{"action":"encrypt","options":{"ddb_table":"test-creds","parameter_key":"my_lambda_var","parameter_value":"lambdavar","kms_key": "alias/test-key"}}' \
 --invocation-type RequestResponse \
  encrypted.txt
 
-#Remove the Lambda garbage (" and \n chars)
+# Remove the Lambda garbage (" and \n chars)
 cat ~/encrypted.txt | tr -d "\"" | sed  's/\\n/\n/g'
 
 ```
@@ -138,14 +139,14 @@ cat ~/encrypted.txt | tr -d "\"" | sed  's/\\n/\n/g'
 }
 ```
 
-###Decrypt
+### Decrypt
 ```shell
 aws lambda invoke --function-name keypot \
 --payload '{"action": "decrypt","options": {"ddb_table": "test-creds","parameter_key": "my_var","kms_key": "alias/test-key"}}' \
 --invocation-type RequestResponse \
  decrypted.txt
 
-#Remove the Lambda garbage (" and \n chars)
+# Remove the Lambda garbage (" and \n chars)
 cat ~/decrypted.txt | tr -d "\"" | sed  's/\\n/\n/g'
 
 ```
@@ -160,14 +161,14 @@ cat ~/decrypted.txt | tr -d "\"" | sed  's/\\n/\n/g'
 }
 ```
 
-###List
+### List
 ```shell
 aws lambda invoke --function-name keypot \
 --payload '{"action": "list","options": {"ddb_table": "test-creds"}}' \
 --invocation-type RequestResponse \
  list.txt
 
-#Remove the Lambda garbage (" and \n chars)
+# Remove the Lambda garbage (" and \n chars)
 cat ~/list.txt | tr -d "\"" | sed  's/\\n/\n/g'
 
 ```
@@ -179,14 +180,14 @@ cat ~/list.txt | tr -d "\"" | sed  's/\\n/\n/g'
   }
 }
 ```
-###Delete
+### Delete
 ```shell
 aws lambda invoke --function-name keypot \
 --payload '{"action": "delete","options": {"ddb_table": "test-creds","parameter_key": "my_var"}}' \
 --invocation-type RequestResponse \
  delete.txt
 
-#Remove the Lambda garbage (" and \n chars)
+# Remove the Lambda garbage (" and \n chars)
 cat ~/delete.txt | tr -d "\"" | sed  's/\\n/\n/g'
 
 ```
@@ -199,7 +200,7 @@ cat ~/delete.txt | tr -d "\"" | sed  's/\\n/\n/g'
 }
 ```
 
-#IAM Role Configuration
+# IAM Role Configuration
 Coming soon.  Pretty much just:
 - DDB:  Read/Write/List operations to any tables you want (or * if you're into that)
 - KMS:  encrypt/decrypt/generatedatakey
